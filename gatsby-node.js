@@ -1,27 +1,59 @@
 const path = require(`path`)
 
-exports.createPages = ({ graphql, actions }) => {
+exports.createPages = async ({ actions, graphql, reporter }) => {
   const { createPage } = actions
-  return graphql(`
+  const result = await graphql(`
     {
-      allWpPost(sort: {fields: [date]}){
+      allWpPost {
         nodes {
-          title
-          excerpt
-          content
+          id
           slug
         }
       }
     }
-  `).then(result => {
-    result.data.allWpPost.nodes.map(node => {
+  `)
+
+  if (result.errors) {
+    reporter.error("There was an error fetching posts", result.errors)
+  }
+
+  const { allWpPost } = result.data
+  if (allWpPost.nodes.length) {
+    allWpPost.nodes.map(post => {
       createPage({
-        path: node.slug,
-        component: path.resolve(`./src/templates/blog-post.js`),
-        context: {
-          slug: node.slug
-        }
+        component: path.resolve(`./src/templates/wp-post.js`),
+        path: post.slug,
+        context: post,
       })
     })
-  })
+  }
+
 }
+
+// const path = require(`path`)
+
+// exports.createPages = ({ graphql, actions }) => {
+//   const { createPage } = actions
+//   return graphql(`
+//     {
+//       allWpPost(sort: {fields: [date]}){
+//         nodes {
+//           title
+//           excerpt
+//           content
+//           slug
+//         }
+//       }
+//     }
+//   `).then(result => {
+//     result.data.allWpPost.nodes.map(node => {
+//       createPage({
+//         path: node.slug,
+//         component: path.resolve(`./src/templates/blog-post.js`),
+//         context: {
+//           slug: node.slug
+//         }
+//       })
+//     })
+//   })
+// }
